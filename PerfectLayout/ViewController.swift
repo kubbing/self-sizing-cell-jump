@@ -73,7 +73,7 @@ fileprivate class MyCell: UICollectionViewCell {
         let top = contentView.topAnchor.constraint(equalTo: self.topAnchor)
         let left = contentView.leadingAnchor.constraint(equalTo: self.leadingAnchor)
         let bottom = contentView.bottomAnchor.constraint(equalTo: self.bottomAnchor)
-        bottom.priority = .defaultHigh
+        bottom.priority = .defaultHigh // to avoid clash with UIKits's encapsulated-content-height
         let right = contentView.trailingAnchor.constraint(equalTo: self.trailingAnchor)
         
         NSLayoutConstraint.activate([top,
