@@ -21,18 +21,18 @@ fileprivate class MyCell: UICollectionViewCell {
                 maxWidthConstraint?.isActive = false
                 return
             }
-            
+
             maxWidthConstraint?.constant = w
             maxWidthConstraint?.isActive = true
         }
     }
-    
+
     var maxWidthConstraint: NSLayoutConstraint? {
         didSet {
             maxWidthConstraint?.isActive = false
         }
     }
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         
@@ -84,15 +84,17 @@ fileprivate class MyCell: UICollectionViewCell {
         // max width using lineView
         
         let lineView = UIView(frame: .zero)
+        lineView.alpha = 0
+        lineView.isUserInteractionEnabled = false
         lineView.translatesAutoresizingMaskIntoConstraints = false
-        
+
         contentView.addSubview(lineView)
         NSLayoutConstraint.activate([lineView.topAnchor.constraint(equalTo: contentView.topAnchor),
                                      lineView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
                                      lineView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
                                      lineView.heightAnchor.constraint(equalToConstant: 1)])
         self.maxWidthConstraint = lineView.widthAnchor.constraint(equalToConstant: 320)
-        
+
         // stackView setup
         
         contentView.layoutMargins = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
@@ -140,7 +142,6 @@ class ViewController: UIViewController {
         layout.minimumLineSpacing = 8
         layout.scrollDirection = .vertical
         layout.sectionInset = .zero
-        layout.estimatedItemSize = CGSize(width: view.bounds.width, height: 88)
         
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.register(MyCell.self, forCellWithReuseIdentifier: "\(MyCell.self)")
@@ -177,25 +178,41 @@ class ViewController: UIViewController {
         
         collectionView.performBatchUpdates({
             collectionView.insertItems(at: indexPaths)
-        }) { [weak self] (finished) in
+        }) { (finished) in
             
         }
+    }
+
+    fileprivate func cellInstance<T: UICollectionViewCell>(indexPath: IndexPath,
+                                                           forSizing: Bool = false) -> T {
+
+        if forSizing {
+            // TODO: Add cache
+            return T(frame: .zero)
+        }
+
+        return self.collectionView.dequeueReusableCell(withReuseIdentifier: "\(T.self)",
+            for: indexPath) as! T
     }
 }
 
 extension ViewController: UICollectionViewDataSource {
     
     func numberOfSections(in collectionView: UICollectionView) -> Int {
+
         return 1
     }
     
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    func collectionView(_ collectionView: UICollectionView,
+                        numberOfItemsInSection section: Int) -> Int {
+
         return data.count
     }
     
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "\(MyCell.self)",
-            for: indexPath) as! MyCell
+    func collectionView(_ collectionView: UICollectionView,
+                        cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+
+        let cell: MyCell = cellInstance(indexPath: indexPath)
         
         let payload = data[indexPath.row]
         cell.maxWidth = collectionView.bounds.width
@@ -205,10 +222,33 @@ extension ViewController: UICollectionViewDataSource {
     }
 }
 
+extension ViewController: UICollectionViewDelegateFlowLayout {
+
+    func collectionView(_ collectionView: UICollectionView,
+                        layout collectionViewLayout: UICollectionViewLayout,
+                        sizeForItemAt indexPath: IndexPath) -> CGSize {
+
+        let cell: MyCell = cellInstance(indexPath: indexPath, forSizing: true)
+        let width = collectionView.bounds.width // minus content and section insets...
+
+        let payload = data[indexPath.row]
+        cell.configure(withTitle: payload.title, subtitle: payload.subtitle)
+        cell.maxWidth = width
+
+        let size = cell.systemLayoutSizeFitting(CGSize(width: width,
+                                                       height: UIView.layoutFittingCompressedSize.height))
+        let height = ceil(size.height)
+
+        return CGSize(width: width, height: height)
+    }
+}
+
 extension ViewController: UICollectionViewDelegate {
     
-    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        
+    func collectionView(_ collectionView: UICollectionView,
+                        willDisplay cell: UICollectionViewCell,
+                        forItemAt indexPath: IndexPath) {
+
         if indexPath.row == data.count - 1 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
                 self?.addEntries()
