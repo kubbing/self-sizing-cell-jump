@@ -217,3 +217,9 @@ extension ViewController: UICollectionViewDelegate {
     }
 }
 
+extension ViewController: UIScrollViewDelegate {
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        print(scrollView.contentOffset)
+    }
+}
